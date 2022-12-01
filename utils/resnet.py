@@ -359,7 +359,11 @@ import torch.nn as nn
 from torchvision.models import vgg19
 
 
-# Define a resnet block
+########################################
+#                                      #
+#          ResNetGenerator             #
+#                                      #
+########################################
 class ResnetBlock(nn.Module):
     def __init__(self, dim, padding_type, norm_layer, use_dropout, use_bias):
         super(ResnetBlock, self).__init__()
@@ -401,8 +405,9 @@ class ResnetBlock(nn.Module):
         out = x + self.conv_block(x)
         return out
 
+
 class ResnetGenerator(nn.Module):
-    def __init__(self, input_nc, output_nc, ngf, norm_type, act_type='selu', use_dropout=False, n_blocks=6, padding_type='reflect', gpu_ids=[]):
+    def __init__(self, input_nc, output_nc, ngf, norm_type, act_type='selu', use_dropout=False, n_blocks=6, padding_type='reflect', device_ids=[]):
         assert(n_blocks >= 0)
         super(ResnetGenerator, self).__init__()
 
@@ -410,8 +415,8 @@ class ResnetGenerator(nn.Module):
         self.input_nc = input_nc
         self.output_nc = output_nc
         self.ngf = ngf
-        self.gpulist = gpu_ids
-        self.num_gpus = len(self.gpulist)
+        self.device_ids = device_ids
+        self.num_gpus = len(self.device_ids)
 
         use_bias = norm_type == 'instance'
 
@@ -491,67 +496,21 @@ class ResnetGenerator(nn.Module):
             model0 += [nn.Tanh()]
 
         self.model0 = nn.Sequential(*model0)
-        self.model0.cuda(self.gpulist[0])
+        self.model0.cuda(self.device_ids[0])
         if self.num_gpus == 2:
             self.model1 = nn.Sequential(*model1)
-            self.model1.cuda(self.gpulist[1])
+            self.model1.cuda(self.device_ids[1])
         if self.num_gpus == 3:
             self.model2 = nn.Sequential(*model2)
-            self.model2.cuda(self.gpulist[2])
+            self.model2.cuda(self.device_ids[2])
 
     def forward(self, input):
-        input = input.cuda(self.gpulist[0])
+        input = input.cuda(self.device_ids[0])
         input = self.model0(input)
         if self.num_gpus == 3:
-            input = input.cuda(self.gpulist[2])
+            input = input.cuda(self.device_ids[2])
             input = self.model2(input)
         if self.num_gpus == 2:
-            input = input.cuda(self.gpulist[1])
+            input = input.cuda(self.device_ids[1])
             input = self.model1(input)
         return input
-
-
-class CNN(nn.Module):
-    def __init__(self, input_nc, output_nc, nf=64):
-        super(CNN, self).__init__()
-        net = [nn.ReflectionPad2d(3), nn.Conv2d(input_nc, nf, kernel_size=7),
-               nn.BatchNorm2d(nf), nn.ReLU(True)]
-        model = []
-        model.append(net)
-
-        self.n_downsample = 2
-
-        mult = 1
-        for i in range(self.n_downsample):
-            mult = 2**i
-            net = [nn.Conv2d(nf*mult, nf*mult*2, kernel_size=3, stride=2, padding=1),
-                     nn.BatchNorm2d(nf*mult*2), nn.ReLU(True)]
-            model.append(net)
-
-        net = [nn.Conv2d(nf*mult*2, 1, kernel_size=1), nn.BatchNorm2d(1), nn.ReLU(True)]
-        net += [nn.AdaptiveAvgPool2d((7,7)), nn.Flatten()]
-        net += [nn.Linear(49, output_nc)]
-
-        model.append(net)
-
-        for i in range(2+self.n_downsample):
-            setattr(self,'model'+str(i), nn.Sequential(*model[i]))
-
-
-    def forward(self, x):
-        for i in range(2+self.n_downsample):
-            model = getattr(self, 'model'+str(i))
-            x = model(x)
-        return x
-
-class VGG(nn.Module):
-    def __init__(self, output_nc):
-        super(VGG, self).__init__()
-        model = vgg19(num_classes=26)
-        # self.features = model.features
-        setattr(self, 'model', model)
-
-
-    def forward(self, x):
-        model = getattr(self, 'model')
-        return model(x)
