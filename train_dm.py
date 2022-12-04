@@ -13,7 +13,7 @@ from torch.autograd import Variable
 import argparse
 
 
-def md_loss(model,
+def dm_loss(model,
             x_natural,
             y,
             optimizer,
@@ -157,7 +157,7 @@ def train_md(dataset, model, num_epoch, device_ids, epsilon, n_d, optimizer, num
         for images, labels in train_loader:
             images, real_labels = images.cuda(device=device_ids[0]), labels.cuda(device=device_ids[0])
             optimizer.zero_grad()
-            loss, l_n, l_r = md_loss(model=model,
+            loss, l_n, l_r = dm_loss(model=model,
                                      x_natural=images,
                                      y=real_labels,
                                      device=device_ids,
