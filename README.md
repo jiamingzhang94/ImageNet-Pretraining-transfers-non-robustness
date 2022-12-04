@@ -34,7 +34,7 @@ python uap.py
 If you find this code to be useful for your research, please consider citing.
 ```
 @inproceedings{zhang2023imageNet,
-  title={Towards Adversarial Attack on Vision-Language Pre-training Models},
+  title={ImageNet Pre-training also Transfers Non-Robustness},
   author={Zhang, Jiaming and Sang, Jitao and Yi, Qi and Yang, Yunfan and Dong, Huiwen and Yu, Jian},
   booktitle="Proceedings of the AAAI Conference on Artificial Intelligence",
   year={2023}
