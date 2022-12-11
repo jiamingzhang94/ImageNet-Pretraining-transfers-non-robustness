@@ -24,11 +24,6 @@ Robust fine-tuning via Discrepancy Mitigating (DM).
 python train_dm.py
 ```
 
-### generate UAP
-We also provide the code for generation of UAP.
-```
-python uap.py
-```
 
 ## Citation
 If you find this code to be useful for your research, please consider citing.
